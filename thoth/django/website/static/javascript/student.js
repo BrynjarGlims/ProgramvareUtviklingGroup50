@@ -1,5 +1,17 @@
-$(document).ready(function(){
+function generateHash(len) {
+	var symbols = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890';
+	var hash = '';
+	for (var i = 0; i < len; i++) {
+		var symIndex = Math.floor(Math.random() * symbols.length);
+		hash += symbols.charAt(symIndex);
+	}
+	return hash;
+}
 
+$(document).ready(function(){
+	if (!/\buser_id=/.test(document.cookie)) { //if no 'user_id' in cookies
+		document.cookie = 'test';  //add cookie 'user_id'
+	}
 	// Starts up socket.io. Creates connection.
 
   var socket = io.connect('http://localhost:3000');
@@ -7,6 +19,9 @@ $(document).ready(function(){
 	console.log('asd'+lectureid);
 
 	socket.emit('usertype','student', lectureid);
+
+
+
 
 
 	/*Speed up and down buttons with animation*/

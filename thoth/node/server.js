@@ -21,9 +21,23 @@ io.on('connection',function(socket){
     // this.
     if (type == 'student'){
       console.log('Student has logged on to lecture ' + lectureid);
+      // HAVE TO CHECK IF STUDENT ALREADY EXISTS SO WE DONT GET DUPLICATES
+      var cookie = socket.handshake.headers.cookie;
+      var match = cookie.match(/\buser_id=([a-zA-Z0-9]{32})/);  //parse cookie header
+      console.log(cookie);
+      var userId = match ? match[1] : null;
+
+
+
       socket.slower = false;
       socket.faster = false;
-      lectures[lectureid]['students'].push(socket);
+      if (userId in lectures[lectureid]['students']){
+        // USER EXISTS
+        console.log('user exists so dont duplicate it ffs')
+      }
+      else{
+          lectures[lectureid]['students'][userId] = socket;
+      }
       io.to(lectures[lectureid].teacherid).emit('update',feedbackcalculator(lectureid));
 
       // Creates a listener for a signal with a name that MAY contain data.
@@ -43,12 +57,7 @@ io.on('connection',function(socket){
       });
       socket.on('disconnect',function(){
         console.log('student disconnect');
-        var connectedstudents = lectures[lectureid].students;
-          for (var i = 0; i<connectedstudents.length;i++){
-            if ( connectedstudents[i].id == socket.id){
-              connectedstudents.splice(i,1);
-            }
-          };
+        delete lectures[lectureid]['students'][userId];
         io.to(lectures[lectureid].teacherid).emit('update',feedbackcalculator(lectureid));
       });
     }
@@ -63,7 +72,7 @@ io.on('connection',function(socket){
       else{
         lectures[lectureid] = {
           teacherid:socket.id,
-          students:[],
+          students:{},
         };
         console.log('lecture created');
       }
@@ -82,20 +91,22 @@ function feedbackcalculator(lectureid){
   var connectedstudents = lectures[lectureid].students;
   var slower = 0;
   var faster = 0;
-  for (var i = 0; i<connectedstudents.length;i++){
-    var student = connectedstudents[i];
+  var count = 0;
+  for (var key in connectedstudents){
+    var student = connectedstudents[key];
     if (student.slower == true){
       slower += 1;
     };
     if (student.faster == true){
       faster += 1;
     };
+    count +=1;
   };
 
   return {
     slower:slower,
     faster:faster,
-    students:connectedstudents.length,
+    students:count,
   }
 };
 
